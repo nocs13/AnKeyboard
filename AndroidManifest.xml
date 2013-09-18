@@ -8,5 +8,12 @@
             </intent-filter>
             <meta-data android:name="android.view.im" android:resource="@xml/method" />
         </service>
+
+        <!-- Optional activities. A good idea to have some user settings. -->
+        <activity android:name="FastInputIMESettings" android:label="@string/fast_input_settings">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

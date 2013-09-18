@@ -19,6 +19,7 @@ import android.app.Activity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -29,26 +30,16 @@ import android.util.Log;
 
 import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.KeyboardView;
+import android.inputmethodservice.Keyboard;
+import android.view.inputmethod.EditorInfo;
 
-public class kAnKeyboard extends InputMethodService implements KeyboardView.OnKeyboardActionListener
+public class kAnKeyboard extends InputMethodService
+       implements KeyboardView.OnKeyboardActionListener
 {
-    public static kAnKeyboard m_test = null;
-    private static String TAG = "kAnKeyboard";
-
-    SurfaceView mView;
-
-    public static void kgmAppFinish()
-    {
-        System.out.println("kAnKeyboard Finishing");
-
-        if(m_test != null)
-        {
-            //m_test.finish();
-        }
-
-        Log.v(TAG, "Finished");
-        System.exit(0);
-    }
+    public static String TAG = "kAnKeyboard";
+    SurfaceView  mView;
+    KeyboardView mInputView;
+    Keyboard     mQwertyKeyboard;
 
     /**/
     public void    onKey(int primaryCode, int[] keyCodes)
@@ -77,29 +68,56 @@ public class kAnKeyboard extends InputMethodService implements KeyboardView.OnKe
     }
 
     /** Called when the activity is first created. */
-    //@Override
-    public void onCreate(Bundle savedInstanceState)
+    @Override
+    public void onCreate()
     {
-    	//super.onCreate(savedInstanceState);
+      super.onCreate();
 
-    	/* Create a TextView and set its content.
-    	 * the text is retrieved by calling a native
-    	 * function.
-    	 */
-    	// requesting to turn the title OFF
-    	//requestWindowFeature(Window.FEATURE_NO_TITLE);
-    	// making it full screen
-    	//getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-    	//		WindowManager.LayoutParams.FLAG_FULLSCREEN);
+      mView = new KeyboardView(getApplication());
+    }
 
+    @Override
+    public View onCreateInputView() {
+        mInputView = (LatinKeyboardView) getLayoutInflater().inflate(
+                R.layout.input, null);
+        mInputView.setOnKeyboardActionListener(this);
+        mInputView.setKeyboard(mQwertyKeyboard);
+        return mInputView;
+    }
 
-    	mView = new SurfaceView(getApplication());
-    	//mView = new TestView(getApplication());
-    	//mView = new GLSurfaceView(this);
-    	//setContentView(mView);
+    @Override
+    public View onCreateCandidatesView() {
+        mCandidateView = new CandidateView(this);
+        mCandidateView.setService(this);
+        return mCandidateView;
+    }
 
-	m_test = this;
-        Log.v(TAG, "Thread = " + Thread.currentThread().getId());
+    @Override public void onStartInputView(EditorInfo attribute, boolean restarting) {
+        super.onStartInputView(attribute, restarting);
+        // Apply the selected keyboard to the input view.
+        mInputView.setKeyboard(mCurKeyboard);
+        mInputView.closing();
+        final InputMethodSubtype subtype = mInputMethodManager.getCurrentInputMethodSubtype();
+        mInputView.setSubtypeOnSpaceKey(subtype);
+    }
+
+    @Override public void onFinishInput() {
+        super.onFinishInput();
+
+        // Clear current composing text and candidates.
+        mComposing.setLength(0);
+        updateCandidates();
+
+        // We only hide the candidates window when finishing input on
+        // a particular editor, to avoid popping the underlying application
+        // up and down if the user is entering text into the bottom of
+        // its window.
+        setCandidatesViewShown(false);
+
+        mCurKeyboard = mQwertyKeyboard;
+        if (mInputView != null) {
+            mInputView.closing();
+        }
     }
 
     @Override
@@ -109,7 +127,7 @@ public class kAnKeyboard extends InputMethodService implements KeyboardView.OnKe
        // Checks the orientation of the screen
        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
          Log.v(TAG, "ORIENTATION_LANDSCAPE");
-       } 
+       }
        else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
          Log.v(TAG, "ORIENTATION_PORTRAIT");
        }
@@ -144,19 +162,4 @@ public class kAnKeyboard extends InputMethodService implements KeyboardView.OnKe
 
     	return true;
     }
-
-    /* A native method that is implemented by the
-     * 'hello-jni' native library, which is packaged
-     * with this application.
-     */
-    /* This is another native method declaration that is *not*
-     * implemented by 'hello-jni'. This is simply to show that
-     * you can declare as many native methods in your Java code
-     * as you want, their implementation is searched in the
-     * currently loaded native libraries only the first time
-     * you call them.
-     *
-     * Trying to call this function will result in a
-     * java.lang.UnsatisfiedLinkError exception !
-     */
 }

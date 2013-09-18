@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">kAnKeyboard</string>
+    <string name="fast_input_settings">kAnKeyboard settings</string>
 </resources>
